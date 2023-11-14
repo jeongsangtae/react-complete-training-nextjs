@@ -1,10 +1,10 @@
 import { MongoClient } from "mongodb";
-import { MONGODB_PW } from "../config";
+import { MONGODB_PW } from "../../config";
 
 // /api/new-meetup
 // POST /api/new-meetup
 
-const handler = async () => {
+const handler = async (req, res) => {
   if (req.method === "POST") {
     const data = req.body;
 
