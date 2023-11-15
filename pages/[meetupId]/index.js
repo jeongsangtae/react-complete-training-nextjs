@@ -1,31 +1,37 @@
+import { MongoClient, ObjectId } from "mongodb";
+import { MONGODB_PW } from "../../config";
+
 import MeetupDetail from "../../components/meetups/MeetupDetail";
 
-const MeetupDetails = () => {
+const MeetupDetails = (props) => {
   return (
     <MeetupDetail
-      image="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Hong_Kong_Harbour_Night_2019-06-11.jpg/1200px-Hong_Kong_Harbour_Night_2019-06-11.jpg"
-      title="A First Meetup"
-      address="Some Street 5, Some City"
-      description="The meetup description"
+      image={props.meetupData.image}
+      title={props.meetupData.title}
+      address={props.meetupData.address}
+      description={props.meetupData.description}
     />
   );
 };
 
 export const getStaticPaths = async () => {
+  const client = await MongoClient.connect(
+    `mongodb+srv://wjdtkdxo55:${MONGODB_PW}@cluster0.mj7yngh.mongodb.net/meetups?retryWrites=true&w=majority`
+  );
+
+  const db = client.db();
+
+  const meetupsCollection = db.collection("meetups");
+
+  const meetups = await meetupsCollection.find({}, { _id: 1 }).toArray();
+
+  client.close();
+
   return {
     fallback: false,
-    paths: [
-      {
-        params: {
-          meetupId: "m1",
-        },
-      },
-      {
-        params: {
-          meetupId: "m2",
-        },
-      },
-    ],
+    paths: meetups.map((meetup) => ({
+      params: { meetupId: meetup._id.toString() },
+    })),
   };
 };
 
@@ -34,17 +40,29 @@ export const getStaticProps = async (context) => {
 
   const meetupId = context.params.meetupId;
 
-  console.log(meetupId);
+  const client = await MongoClient.connect(
+    `mongodb+srv://wjdtkdxo55:${MONGODB_PW}@cluster0.mj7yngh.mongodb.net/meetups?retryWrites=true&w=majority`
+  );
+  const db = client.db();
+
+  const meetupsCollection = db.collection("meetups");
+
+  const selectedMeetup = await meetupsCollection.findOne({
+    _id: new ObjectId(meetupId),
+  });
+
+  console.log(selectedMeetup);
+
+  client.close();
 
   return {
     props: {
       meetupData: {
-        image:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Hong_Kong_Harbour_Night_2019-06-11.jpg/1200px-Hong_Kong_Harbour_Night_2019-06-11.jpg",
-        id: meetupId,
-        title: "A First Meetup",
-        address: "Some Street 5, Some City",
-        description: "The meetup description",
+        id: selectedMeetup._id.toString(),
+        title: selectedMeetup.title,
+        address: selectedMeetup.address,
+        image: selectedMeetup.image,
+        description: selectedMeetup.description,
       },
     },
   };
